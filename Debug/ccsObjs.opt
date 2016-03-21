@@ -1,0 +1,1 @@
+"./Baro_Temp.obj" "./I2C0.obj" "./Light.obj" "./dht22.obj" "./main.obj" "./msp430_spi.obj" "./msp432_startup_ccs.obj" "./msprf24.obj" "./support.obj" "../msp432p401r.cmd" "../msp432p4xx_driverlib.lib" -l"libc.a" 
