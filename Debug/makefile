@@ -14,10 +14,13 @@ ORDERED_OBJS += \
 "./I2C0.obj" \
 "./Light.obj" \
 "./dht22.obj" \
+"./ff.obj" \
 "./main.obj" \
+"./mmc-msp432P401r.obj" \
 "./msp430_spi.obj" \
 "./msp432_startup_ccs.obj" \
 "./msprf24.obj" \
+"./spiDriver.obj" \
 "./support.obj" \
 "../msp432p401r.cmd" \
 "../msp432p4xx_driverlib.lib" \
@@ -158,8 +161,8 @@ Project\ 1\ Remote.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)$(BIN_OUTPUTS__QUOTED)
-	-$(RM) "Baro_Temp.pp" "I2C0.pp" "Light.pp" "dht22.pp" "main.pp" "msp430_spi.pp" "msp432_startup_ccs.pp" "msprf24.pp" "support.pp" 
-	-$(RM) "Baro_Temp.obj" "I2C0.obj" "Light.obj" "dht22.obj" "main.obj" "msp430_spi.obj" "msp432_startup_ccs.obj" "msprf24.obj" "support.obj" 
+	-$(RM) "Baro_Temp.pp" "I2C0.pp" "Light.pp" "dht22.pp" "ff.pp" "main.pp" "mmc-msp432P401r.pp" "msp430_spi.pp" "msp432_startup_ccs.pp" "msprf24.pp" "spiDriver.pp" "support.pp" 
+	-$(RM) "Baro_Temp.obj" "I2C0.obj" "Light.obj" "dht22.obj" "ff.obj" "main.obj" "mmc-msp432P401r.obj" "msp430_spi.obj" "msp432_startup_ccs.obj" "msprf24.obj" "spiDriver.obj" "support.obj" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

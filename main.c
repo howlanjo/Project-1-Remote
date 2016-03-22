@@ -5,29 +5,80 @@
 #include "support.h"
 #include "msprf24.h"
 #include "nrf_userconfig.h"
+#include "ff.h"
+#include "diskio.h"
+#include "spiDriver.h"
 
 #define	ADDRESS_WIDTH					22
 
 
 int InitFunction(void);
 int SendDataToBase(char dataType, int16_t dataIn);
-int Refresh = 0;
+int SD_CardInit(void);
+
+// The following are data structures used by FatFs.
+static FATFS g_sFatFs;
+static DIR g_sDirObject;
+static FILINFO g_sFileInfo;
+static FIL g_sFileObject;
+
+int Refresh = 0, Use_SD_CARD = 0;
 int16_t calData[11];
 int16_t lux, humidity, temp1;
 int32_t temperature = 99, pressure = 99;
 int8_t lightIndex = 6;
 
+/* SPI Master Configuration Parameter */
+const eUSCI_SPI_MasterConfig SDspiConfig =
+{
+        EUSCI_B_SPI_CLOCKSOURCE_SMCLK,             // ACLK Clock Source
+        12000000,                                   // ACLK 128khz
+        12000000,                                    // SPICLK = 128khz
+        EUSCI_B_SPI_MSB_FIRST,                     // MSB First
+        EUSCI_B_SPI_PHASE_DATA_CHANGED_ONFIRST_CAPTURED_ON_NEXT,    // Phase
+        EUSCI_B_SPI_CLOCKPOLARITY_INACTIVITY_HIGH, // High polarity
+        EUSCI_B_SPI_3PIN                           // 3Wire SPI Mode
+};
+
 void main()
 {
-	int err = 0;
+	int err = 0, count = 0, bytesWritten = 0;
 	char addr[5], i = '0';
 	char buf[32], data[64];
 	uint8_t status;
+	uint32_t ACLKfreq;
+	BYTE temp[100];
+	UINT bw = 0, btw;
+	FRESULT iFResult;
+	DWORD sizeBuf = 0;
+
 
 	err = InitFunction();
 	err |= ADC_InitFunction();
 	err |= I2C_InitFunc(calData);
 	err |= InitOneWire();
+
+	Use_SD_CARD = YES;
+	if(SD_CardInit())
+	{
+		Use_SD_CARD = NO;
+	}
+//	else
+//	{
+//		iFResult = f_open(&g_sFileObject, "data.txt", FA_WRITE);
+//		count = 0;
+//		while ((iFResult != FR_OK) && (count < 5))
+//		{
+//			iFResult = f_mount(0, 0);
+//			count++;
+//			__delay_cycles(10000);
+//			iFResult = f_mount(0, &g_sFatFs);
+//			__delay_cycles(10000);
+//			iFResult |= f_open(&g_sFileObject, "data.txt", FA_WRITE | FA_CREATE_NEW);
+//		}
+//	}
+
+	ACLKfreq = MAP_CS_getACLK();  // get ACLK value to verify it was set correctly
 
 	rf_crc = RF24_CRCO;
 	rf_addr_width      = (uint8_t)ADDRESS_WIDTH;
@@ -69,6 +120,7 @@ void main()
 		while(Refresh == 0)
 		{
 		}
+		MAP_ADC14_toggleConversionTrigger();
 		Refresh = 0;
 
 	    GetLightValue(&lux, &lightIndex);
@@ -85,16 +137,38 @@ void main()
 		printf("Lux: %d\n", lux);
 		printf("Humidity: %d\n", h);
 
-		sprintf(buf, "<T%003dP%00005dH%003dL%00005d>", temperature, pressure, h, lux);
+		sprintf(buf, "<T%003dP%000006dH%003dL%00005d>", temperature, pressure, h, lux);
 
 		GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
 		w_tx_payload((uint8_t)ADDRESS_WIDTH, buf);
 		msprf24_activate_tx();
 		GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
-//		__delay_cycles(10000000);
-		MAP_ADC14_toggleConversionTrigger();
+		if(Use_SD_CARD == YES)
+		{
+			iFResult = f_open(&g_sFileObject, "data.txt", FA_OPEN_EXISTING | FA_WRITE);
+			count = 0;
+			while ((iFResult != FR_OK) && (count < 5))
+			{
+				iFResult = f_mount(0, 0);
+				count++;
+				__delay_cycles(10000);
+				iFResult = f_mount(0, &g_sFatFs);
+				__delay_cycles(10000);
+				iFResult |= f_open(&g_sFileObject, "data.txt", FA_WRITE | FA_CREATE_NEW);
+			}
+//			sizeBuf = strlen(temp) + 1;
+			sizeBuf = sizeBuf + bw;
 
+			sprintf(temp, "\n%d, %d, %d, %d ", temperature, pressure, lux, h);
+			btw = strlen(temp);
+			if(count < 5)
+			{
+				iFResult = f_lseek(&g_sFileObject, sizeBuf);
+				iFResult = f_write(&g_sFileObject, temp, btw, &bw);
+				iFResult = f_close(&g_sFileObject);
+			}
+		}
 	}
 }
 //------------------------------------------------------------------------------
@@ -204,6 +278,45 @@ void timer_b_0_isr(void)
     MAP_Timer_A_clearInterruptFlag(TIMER_A1_MODULE);
     Refresh = 1;
 }
+////------------------------------------------------------------------------------
+Fd_t spi_Open(void)
+{
+    /* Selecting P9.5 P9.6 and P9.7 in SPI mode */
+	GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P6,
+			GPIO_PIN3 | GPIO_PIN4 | GPIO_PIN5, GPIO_PRIMARY_MODULE_FUNCTION);
+
+	/* CS setup. */
+	GPIO_setAsOutputPin(GPIO_PORT_P4, GPIO_PIN6);
+    GPIO_setOutputLowOnPin(GPIO_PORT_P4, GPIO_PIN6);
+
+    /* Configuring SPI in 3wire master mode */
+	SPI_initMaster(EUSCI_B1_MODULE, &SDspiConfig);
+
+	/* Enable SPI module */
+	SPI_enableModule(EUSCI_B1_MODULE);
+
+    return 0;//NONOS_RET_OK;
+}
 //------------------------------------------------------------------------------
+int SD_CardInit(void)
+{
+	int err = 0;
+
+	int8_t lucNStatus = 0;
+	FRESULT iFResult;
+
+	spi_Open();
+
+	// Mount the file system, using logical disk 0.
+	iFResult = f_mount(0, &g_sFatFs);
+	//iFResult = f_mount(&g_sFatFs, "", 0);
+	if (iFResult != FR_OK)
+	{
+		err = -1;
+//		printf("f_mount error: %s\n", StringFromFResult(iFResult));
+	}
+
+	return err;
+}
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------

@@ -48,6 +48,11 @@ main.obj: ../support.h
 main.obj: ../msprf24.h
 main.obj: ../nRF24L01.h
 main.obj: ../nrf_userconfig.h
+main.obj: ../ff.h
+main.obj: ../integer.h
+main.obj: ../ffconf.h
+main.obj: ../diskio.h
+main.obj: ../spiDriver.h
 
 ../main.c: 
 C:/ti/ccsv6/ccs_base/arm/include/msp432.h: 
@@ -97,3 +102,8 @@ C:/Users/ChaseHowland\ Pro/ti/Project\ 1\ Remote/driverlib/MSP432P4xx/wdt_a.h:
 ../msprf24.h: 
 ../nRF24L01.h: 
 ../nrf_userconfig.h: 
+../ff.h: 
+../integer.h: 
+../ffconf.h: 
+../diskio.h: 
+../spiDriver.h: 

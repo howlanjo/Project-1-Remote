@@ -14,10 +14,13 @@ C_SRCS += \
 ../I2C0.c \
 ../Light.c \
 ../dht22.c \
+../ff.c \
 ../main.c \
+../mmc-msp432P401r.c \
 ../msp430_spi.c \
 ../msp432_startup_ccs.c \
 ../msprf24.c \
+../spiDriver.c \
 ../support.c 
 
 OBJS += \
@@ -25,10 +28,13 @@ OBJS += \
 ./I2C0.obj \
 ./Light.obj \
 ./dht22.obj \
+./ff.obj \
 ./main.obj \
+./mmc-msp432P401r.obj \
 ./msp430_spi.obj \
 ./msp432_startup_ccs.obj \
 ./msprf24.obj \
+./spiDriver.obj \
 ./support.obj 
 
 C_DEPS += \
@@ -36,10 +42,13 @@ C_DEPS += \
 ./I2C0.pp \
 ./Light.pp \
 ./dht22.pp \
+./ff.pp \
 ./main.pp \
+./mmc-msp432P401r.pp \
 ./msp430_spi.pp \
 ./msp432_startup_ccs.pp \
 ./msprf24.pp \
+./spiDriver.pp \
 ./support.pp 
 
 C_DEPS__QUOTED += \
@@ -47,10 +56,13 @@ C_DEPS__QUOTED += \
 "I2C0.pp" \
 "Light.pp" \
 "dht22.pp" \
+"ff.pp" \
 "main.pp" \
+"mmc-msp432P401r.pp" \
 "msp430_spi.pp" \
 "msp432_startup_ccs.pp" \
 "msprf24.pp" \
+"spiDriver.pp" \
 "support.pp" 
 
 OBJS__QUOTED += \
@@ -58,10 +70,13 @@ OBJS__QUOTED += \
 "I2C0.obj" \
 "Light.obj" \
 "dht22.obj" \
+"ff.obj" \
 "main.obj" \
+"mmc-msp432P401r.obj" \
 "msp430_spi.obj" \
 "msp432_startup_ccs.obj" \
 "msprf24.obj" \
+"spiDriver.obj" \
 "support.obj" 
 
 C_SRCS__QUOTED += \
@@ -69,10 +84,13 @@ C_SRCS__QUOTED += \
 "../I2C0.c" \
 "../Light.c" \
 "../dht22.c" \
+"../ff.c" \
 "../main.c" \
+"../mmc-msp432P401r.c" \
 "../msp430_spi.c" \
 "../msp432_startup_ccs.c" \
 "../msprf24.c" \
+"../spiDriver.c" \
 "../support.c" 
 
 

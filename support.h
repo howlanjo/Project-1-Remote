@@ -6,6 +6,24 @@
 #define	FAIL			-1
 #define	PASS			0
 
+
+#define PATH_BUF_SIZE           80
+
+// Defines the size of the buffer that holds the command line.
+#define CMD_BUF_SIZE            64
+
+// This buffer holds the full path to the current working directory.  Initially
+// it is root ("/").
+static char g_pcCwdBuf[PATH_BUF_SIZE] = "/";
+
+// A temporary data buffer used when manipulating file paths, or reading data
+// from the SD card.
+static char g_pcTmpBuf[PATH_BUF_SIZE];
+
+// The buffer that holds the command line.
+static char g_pcCmdBuf[CMD_BUF_SIZE];
+
+
 #define BMP180_PROM_START__ADDR		(0xAA)
 #define BMP180_PROM_DATA__LEN		(22)
 

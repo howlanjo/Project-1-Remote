@@ -127,7 +127,7 @@ int InitFunction(void)
 	/* Starting and enabling ACLK (32kHz) */
 	MAP_CS_setReferenceOscillatorFrequency(CS_REFO_128KHZ);
 	MAP_CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_4);
-//	ACLKfreq = MAP_CS_getACLK();  // get ACLK value to verify it was set correctly
+	ACLKfreq = MAP_CS_getACLK();  // get ACLK value to verify it was set correctly
 
 	/* Configuring Continuous Mode */
 	MAP_Timer_A_configureContinuousMode(TIMER_A1_MODULE, &continuousModeConfigB);
