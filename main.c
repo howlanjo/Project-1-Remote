@@ -52,32 +52,20 @@ void main()
 	FRESULT iFResult;
 	DWORD sizeBuf = 0;
 
-
+//Initialization Functions
 	err = InitFunction();
 	err |= ADC_InitFunction();
 	err |= I2C_InitFunc(calData);
 	err |= InitOneWire();
 
+//Initialize the SD card
 	Use_SD_CARD = YES;
 	if(SD_CardInit())
 	{
 		Use_SD_CARD = NO;
 	}
-//	else
-//	{
-//		iFResult = f_open(&g_sFileObject, "data.txt", FA_WRITE);
-//		count = 0;
-//		while ((iFResult != FR_OK) && (count < 5))
-//		{
-//			iFResult = f_mount(0, 0);
-//			count++;
-//			__delay_cycles(10000);
-//			iFResult = f_mount(0, &g_sFatFs);
-//			__delay_cycles(10000);
-//			iFResult |= f_open(&g_sFileObject, "data.txt", FA_WRITE | FA_CREATE_NEW);
-//		}
-//	}
 
+	//Initialize the nRF wireless module
 	ACLKfreq = MAP_CS_getACLK();  // get ACLK value to verify it was set correctly
 
 	rf_crc = RF24_CRCO;
@@ -115,39 +103,49 @@ void main()
 	MAP_Interrupt_enableMaster();
 //	MAP_Interrupt_setPriority(INT_TA0_0, 0x00);
 
+	//Entering the main loop
 	while(1)
 	{
 		while(Refresh == 0)
-		{
+		{	//Keep the process locked here until 'Refresh' is set high.
 		}
 		MAP_ADC14_toggleConversionTrigger();
 		Refresh = 0;
 
+		//Get light value
 	    GetLightValue(&lux, &lightIndex);
+
+	    //Get temperature and pressure
 	    GetBaroTemp(calData, &temperature, &pressure);
 
+	    //Get temperature and humidity
 	    __delay_cycles(100);
 	    dht_start_read();
 	    int t = dht_get_temp();
 	    int h = dht_get_rh();
 		__delay_cycles(100);
 
+		//For debug purposes
 		printf("Temperature: %d\n", temperature);
 		printf("Pressure: %d\n", pressure);
 		printf("Lux: %d\n", lux);
 		printf("Humidity: %d\n", h);
 
+		//Form the string to send to base station
 		sprintf(buf, "<T%003dP%000006dH%003dL%00005d>", temperature, pressure, h, lux);
 
+		//transmit data
 		GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
 		w_tx_payload((uint8_t)ADDRESS_WIDTH, buf);
 		msprf24_activate_tx();
 		GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
+		//open SD card
 		if(Use_SD_CARD == YES)
 		{
 			iFResult = f_open(&g_sFileObject, "data.txt", FA_OPEN_EXISTING | FA_WRITE);
 			count = 0;
+			//if the first open fails, unmount and try again for 5 times
 			while ((iFResult != FR_OK) && (count < 5))
 			{
 				iFResult = f_mount(0, 0);
@@ -164,8 +162,10 @@ void main()
 			btw = strlen(temp);
 			if(count < 5)
 			{
+				//Find the end of the file and write new data here
 				iFResult = f_lseek(&g_sFileObject, sizeBuf);
 				iFResult = f_write(&g_sFileObject, temp, btw, &bw);
+				//close the file
 				iFResult = f_close(&g_sFileObject);
 			}
 		}
